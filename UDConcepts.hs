@@ -86,7 +86,9 @@ instance UDObject UDWord where
     concat (intersperse "\t" [prt id,fo,le,up,xp,prt fe,prt he,de,ds,prt mi])
   prs s = case getSeps '\t' (strip s) of
     id:fo:le:up:xp:fe:he:de:ds:mi:_ ->
-      UDWord (prs $ strip id) fo le up xp (prs $ strip fe) (prs $ strip he) de ds (prs $ strip mi) 
+      UDWord (prs $ strip id) fo le up xp (prs $ strip fe) (prs $ strip he) de ds (prs $ strip mi)
+    id:fo:up:he:de:_ ->
+      UDWord (prs $ strip id) fo "_" up "_" (prs $ strip "_") (prs $ strip he) de "_" (prs $ strip "_")
     _ -> error ("ERROR: " ++ s ++ " incomplete UDWord")
   errors w@(UDWord id fo le up xp fe he de ds mi) =
     concat [errors id, checkUDPOS up, errors fe, errors he, checkUDLabel de, errors mi] ++
