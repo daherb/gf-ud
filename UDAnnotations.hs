@@ -159,12 +159,12 @@ pCncLabels = dispatch . map words . uncomment . lines
  where
   dispatch = foldr add initCncLabels
   add ws labs = case ws of
-    "#morpho"  :cs:i:p:_  | all isDigit i -> labs{morphoLabels = inserts [((mkCId c,read i),(prs p)::[UDData]) | c <- getSeps ',' cs] (morphoLabels labs)}
+    "#morpho"  :cs:i:p:_  | all isDigit i -> labs{morphoLabels = inserts [((mkCId c,read i),(prs p)::[UDData]) | c <- getSeps (==',') cs] (morphoLabels labs)}
     "#word"    :w:l:m:_ -> labs{wordLabels   = M.insert w (l,prs m) (wordLabels labs)}
-    "#lemma"   :w:l:c:p:t:_ -> labs{lemmaLabels  = inserts [((mkCId f,l),(mkCId c,(p,t))) | f <- getSeps ',' w] (lemmaLabels labs)}
+    "#lemma"   :w:l:c:p:t:_ -> labs{lemmaLabels  = inserts [((mkCId f,l),(mkCId c,(p,t))) | f <- getSeps (==',') w] (lemmaLabels labs)}
     "#discont" :c:h:ps    -> labs{discontLabels = inserts
-                               ([((mkCId c,i),(x_POS,head_Label,root_Label)) | is:"head":_ <- [getSeps ',' h], i <- readRange is] ++ -- bogus pos and target, to be thrown away
-                                [((mkCId c,read i),(pos,lab,hd))                | p <- ps, i:pos:lab:hd:_ <- [getSeps ',' p]])
+                               ([((mkCId c,i),(x_POS,head_Label,root_Label)) | is:"head":_ <- [getSeps (==',') h], i <- readRange is] ++ -- bogus pos and target, to be thrown away
+                                [((mkCId c,read i),(pos,lab,hd))                | p <- ps, i:pos:lab:hd:_ <- [getSeps (==',') p]])
                                    (discontLabels labs)}
     "#multiword":c:hp:lab:_  -> labs{multiLabels = M.insert (mkCId c) (hp/="head-last",lab) (multiLabels labs)}
     _ -> labs --- ignores silently

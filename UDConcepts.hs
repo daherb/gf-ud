@@ -11,6 +11,7 @@ import qualified Data.Map as M
 import Data.List
 import Data.Char
 
+
 -- text paragraph representing the tree of a sentence
 data UDSentence = UDSentence {
   udCommentLines :: [String], -- all comments start with '#'
@@ -84,7 +85,7 @@ instance UDObject UDSentence where
 instance UDObject UDWord where
   prt w@(UDWord id fo le up xp fe he de ds mi) =
     concat (intersperse "\t" [prt id,fo,le,up,xp,prt fe,prt he,de,ds,prt mi])
-  prs s = case getSeps '\t' (strip s) of
+  prs s = case getSeps isSpace s of
     id:fo:le:up:xp:fe:he:de:ds:mi:_ ->
       UDWord (prs $ strip id) fo le up xp (prs $ strip fe) (prs $ strip he) de ds (prs $ strip mi)
     id:fo:up:he:de:_ ->
@@ -118,7 +119,7 @@ instance UDObject UDId where
 instance UDObject UDData where
   prt d = udArg d ++ "=" ++ concat (intersperse "," (udVals d))
   prs s = case break (=='=') (strip s) of
-    (a,_:vs@(_:_)) -> UDData a (getSeps ',' vs)
+    (a,_:vs@(_:_)) -> UDData a (getSeps (==',') vs)
     _ -> error ("ERROR:" ++ s ++ " invalid UDData")
 
 --- this works only for | separated lists...
@@ -128,7 +129,7 @@ instance UDObject d => UDObject [d] where
     _ -> concat (intersperse "|" (map prt ds))
   prs s = case (strip s) of
     "_" -> []
-    _ -> map (prs . strip) (getSeps '|' s)
+    _ -> map (prs . strip) (getSeps (=='|') s)
   errors ds = concatMap errors ds
 
 -- printing for Malt parser requires the metadata
@@ -147,7 +148,7 @@ prUDSentence i = prt . addMeta i
 
 -- example input: "1 John John NOUN 2 nsubj ; 2 walks walk VERB 0 root"
 pQuickUDSentence :: String -> UDSentence
-pQuickUDSentence = prss . map completeUDWord . getSeps ";" . words
+pQuickUDSentence = prss . map completeUDWord . getSeps (==";") . words
  where
   completeUDWord ws = case ws of
     index:word:lemma:pos:goal:label:_ -> (concat (intersperse "\t" [index,word,lemma,pos,dum,dum,goal,label,dum,dum]))
@@ -265,10 +266,10 @@ checkInList desc xs x =
  where
    xset = S.fromList xs
 
-getSeps :: Eq a => a -> [a] -> [[a]]
-getSeps p xs = filter (not .null) getSeps'
+getSeps :: Eq a => (a -> Bool) -> [a] -> [[a]]
+getSeps p xs = filter (not . null) getSeps'
   where
-    getSeps' = case break (==p) xs of
+    getSeps' = case break p xs of
       (c,_:xx) -> c : getSeps p xx
       (c,_) -> [c]
 
@@ -338,3 +339,4 @@ udCorpusScore isMicro agree golds tests = UDScore {
         map (uncurry (udSentenceScore agree)) (zip golds tests)
     numberalls  =  sum (map udTotalLength sentenceScores)
     numbersames =  sum (map udSamesLength sentenceScores)
+
